@@ -4,26 +4,29 @@ import distance from 'google-distance-matrix';
 import moment from 'moment';
 
 
-fixture`Jas' shortlist`
-    .page`https://www.domain.com.au/user/shortlist`;
+fixture`The Search`
+    .page`https://www.domain.com.au/rent/?suburb=manly-nsw-2095,bondi-nsw-2026,queenscliff-nsw-2096,manly-vale-nsw-2093,clovelly-nsw-2031,bronte-nsw-2024&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
 
-const getPageLength = ClientFunction(() => {
-    return document.querySelectorAll('[data-testid=paginator-page-button]').length
+const checkIfOnLastPage = ClientFunction(() => {
+    return document.querySelectorAll('[data-testid=paginator-navigation-button]')[1].disabled
 });
 
 const getData = ClientFunction(() => {
-    const properties = document.querySelectorAll('[data-testid=listing-card-wrapper-tall]');
+    const properties = document.querySelectorAll('[data-testid^=listing-card-wrapper]');
 
     const results = [];
     for (const property of properties) {
         const rentText = property.querySelector('[data-testid=listing-card-price-wrapper]').innerText;
-        if (rentText.match(/.*(DEPOSIT|HOLDING|TAKEN).*/i)) continue;
+        if (!rentText.match(/.*(\$\d{3}).*/)) continue;
 
-        const rentAmount = rentText.substring(0, 4);
+        const rentAmount = rentText.match(/.*(\$\d{3}).*/)[1];
         const link = property.querySelector('a').href;
-        const addressLine1 = property.querySelector('[data-testid=address-line1]').innerText;
+        const addressLine1 = (property.querySelector('[data-testid=address-line1]') || {}).innerText;
+        if(!addressLine1) continue;
+
         const addressLine2 = property.querySelector('[data-testid=address-line2]').innerText;
         const suburb = property.querySelector('[itemprop=addressLocality]').innerText;
+
         const bedrooms = property.querySelector('[data-testid=property-features-text-container]').innerText.substring(0, 1);
         const carSpaces = property.querySelectorAll('[data-testid=property-features-text-container]')[2].innerText.substring(0, 1);
         const carSpacesText = carSpaces.replace('1', 'YES').replace('−', 'NO');
@@ -44,6 +47,7 @@ async function getDistances(records) {
     for (const chunk of addressChunks) {
         carDistances = [...carDistances, ...(await getCarDistances(chunk)).rows];
         busDistances = [...busDistances, ...(await getBusDistances(chunk)).rows];
+        console.log("Getting data from Google, rows processed: ", carDistances.length);
     }
 
     return carDistances.map((record, index) => {
@@ -66,7 +70,7 @@ function chunkArray(array, size) {
 }
 
 async function getCarDistances(addresses) {
-    distance.key('');
+    distance.key(process.env.API_KEY);
     distance.units('metric');
     distance.mode('driving');
     const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
@@ -78,7 +82,7 @@ async function getCarDistances(addresses) {
 }
 
 async function getBusDistances(addresses) {
-    distance.key('');
+    distance.key(process.env.API_KEY);
     distance.units('metric');
     distance.mode('transit');
     const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
@@ -90,21 +94,19 @@ async function getBusDistances(addresses) {
 }
 
 test('CSV these props', async t => {
-    await t.typeText('[name=username]', 'joe.gaebel@hotmail.com');
-    await t.typeText('[name=password]', '');
-    await t.click('[type=submit]');
-
-    const pages = await getPageLength();
+    let isOnLastPage;
     let records = [];
 
-    for (let page = 1; page < pages; page++) {
+    while (!isOnLastPage) {
+        isOnLastPage = await checkIfOnLastPage();
         const pageRecords = await getData();
         records = [...records, ...pageRecords];
 
-        const nextPageButton = await Selector('a[data-testid=paginator-page-button]')
-            .withText((page + 1).toString());
+        const nextPageButton = await Selector('[data-testid=paginator-navigation-button]')
+            .withText("next page");
 
-        await t.click(nextPageButton)
+        await t.click(nextPageButton);
+        console.log('Collected data, records are', records.length)
     }
 
     const distances = await getDistances(records);
