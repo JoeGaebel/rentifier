@@ -1,0 +1,19 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "testcafe chrome test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "csv-writer": "1.6.0",
+    "google-distance-matrix": "1.1.1",
+    "moment": "2.25.3",
+    "node-fetch": "2.6.0",
+    "testcafe": "1.8.4"
+  }
+}
