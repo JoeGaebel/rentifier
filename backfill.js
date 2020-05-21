@@ -1,10 +1,10 @@
-const {chunkArray, getAlreadyRated, getCarDistances} = require("./helpers.js");
+const {chunkArray, getAlreadyRated, getTravelDistances} = require("./helpers.js");
 const {createArrayCsvWriter} = require("csv-writer");
 
 async function getDistances(addresses) {
     const addressChunks = chunkArray(addresses, 15);
 
-    const carPointOfInterestAddresses = [
+    const pointOfInterestAddresses = [
         'Coogee Beach',
         'Bronte Beach',
     ];
@@ -12,7 +12,10 @@ async function getDistances(addresses) {
     let carDistances = [];
 
     for (const chunk of addressChunks) {
-        carDistances = [...carDistances, ...(await getCarDistances(chunk, carPointOfInterestAddresses)).rows];
+        carDistances = [
+            ...carDistances,
+            ...(await getTravelDistances(chunk, pointOfInterestAddresses, 'driving')).rows
+        ];
         console.log("Getting data from Google, rows processed: ", carDistances.length);
     }
     return carDistances;

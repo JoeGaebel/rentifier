@@ -2,19 +2,10 @@ const distance = require("google-distance-matrix");
 const moment = require("moment");
 const fs = require("fs");
 
-exports.getCarDistances = async function (propertyAddresses, pointOfInterestAddresses) {
-    distance.key(process.env.API_KEY);
-    distance.units('metric');
-    distance.mode('driving');
-    const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
-    distance.departure_time(monday7AMinUTC);
-
-    return await new Promise(resolve => {
-        distance.matrix(propertyAddresses, pointOfInterestAddresses, (err, data) => resolve(data));
-    });
-};
-
-exports.getBusDistances = async function (propertyAddresses, pointOfInterestAddresses) {
+exports.getTravelDistances = async function (propertyAddresses, pointOfInterestAddresses, mode) {
+    if(!['walking', 'driving', 'bicycling', 'transit'].includes(mode)) {
+        throw Error("mode needs to be either 'walking', 'driving', 'bicycling', 'transit'")
+    }
     distance.key(process.env.API_KEY);
     distance.units('metric');
     distance.mode('transit');

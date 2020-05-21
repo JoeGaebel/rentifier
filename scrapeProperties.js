@@ -1,6 +1,6 @@
 import {ClientFunction, Selector} from 'testcafe'
 import {createArrayCsvWriter} from 'csv-writer';
-import {chunkArray, getAlreadyRated, getBusDistances, getCarDistances} from "./helpers";
+import {chunkArray, getAlreadyRated, getTravelDistances} from "./helpers";
 
 fixture`The Search`
     .page`https://www.domain.com.au/rent/?suburb=manly-nsw-2095,bondi-nsw-2026,queenscliff-nsw-2096,manly-vale-nsw-2093,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
@@ -56,8 +56,8 @@ async function getDistances(records) {
     let busDistances = [];
 
     for (const chunk of addressChunks) {
-        carDistances = [...carDistances, ...(await getCarDistances(chunk, carPointOfInterestAddresses)).rows];
-        busDistances = [...busDistances, ...(await getBusDistances(chunk, busPointOfInterestAddresses)).rows];
+        carDistances = [...carDistances, ...(await getTravelDistances(chunk, carPointOfInterestAddresses, 'driving')).rows];
+        busDistances = [...busDistances, ...(await getTravelDistances(chunk, busPointOfInterestAddresses, 'transit')).rows];
         console.log("Getting data from Google, rows processed: ", carDistances.length);
     }
 
