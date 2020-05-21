@@ -1,8 +1,6 @@
 import {ClientFunction, Selector} from 'testcafe'
 import {createArrayCsvWriter} from 'csv-writer';
-import distance from 'google-distance-matrix';
-import moment from 'moment';
-import alreadyRated from "./alreadyRated";
+import {chunkArray, getAlreadyRated, getBusDistances, getCarDistances} from "./helpers";
 
 fixture`The Search`
     .page`https://www.domain.com.au/rent/?suburb=manly-nsw-2095,bondi-nsw-2026,queenscliff-nsw-2096,manly-vale-nsw-2093,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
@@ -22,7 +20,7 @@ const getData = ClientFunction(() => {
         const rentAmount = rentText.match(/.*(\$\d{3}).*/)[1];
         const link = property.querySelector('a').href;
         const addressLine1 = (property.querySelector('[data-testid=address-line1]') || {}).innerText;
-        if(!addressLine1) continue;
+        if (!addressLine1) continue;
 
         const addressLine2 = property.querySelector('[data-testid=address-line2]').innerText;
         const suburb = property.querySelector('[itemprop=addressLocality]').innerText;
@@ -41,12 +39,25 @@ async function getDistances(records) {
     const addresses = records.map(record => record[0]);
     const addressChunks = chunkArray(addresses, 15);
 
+    const carPointOfInterestAddresses = [
+        'Coogee Beach',
+        'Bronte Beach',
+        'Bondi Beach',
+        'Manly Beach',
+        '20 Berry St, North Sydney NSW 2060'
+    ];
+
+    const busPointOfInterestAddresses = [
+        '1 Smail St, Ultimo NSW 2007',
+        '11/155 Clarence St, Sydney NSW 2000'
+    ];
+
     let carDistances = [];
     let busDistances = [];
 
     for (const chunk of addressChunks) {
-        carDistances = [...carDistances, ...(await getCarDistances(chunk)).rows];
-        busDistances = [...busDistances, ...(await getBusDistances(chunk)).rows];
+        carDistances = [...carDistances, ...(await getCarDistances(chunk, carPointOfInterestAddresses)).rows];
+        busDistances = [...busDistances, ...(await getBusDistances(chunk, busPointOfInterestAddresses)).rows];
         console.log("Getting data from Google, rows processed: ", carDistances.length);
     }
 
@@ -60,40 +71,10 @@ async function getDistances(records) {
     })
 }
 
-function chunkArray(array, size) {
-    let result = [];
-    for (let i = 0; i < array.length; i += size) {
-        let chunk = array.slice(i, i + size);
-        result.push(chunk)
-    }
-    return result
-}
-
-async function getCarDistances(addresses) {
-    distance.key(process.env.API_KEY);
-    distance.units('metric');
-    distance.mode('driving');
-    const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
-    distance.departure_time(monday7AMinUTC);
-
-    return await new Promise(resolve => {
-        distance.matrix(addresses, ['Bondi Beach', 'Manly Beach', '20 Berry St, North Sydney NSW 2060'], (err, data) => resolve(data));
-    });
-}
-
-async function getBusDistances(addresses) {
-    distance.key(process.env.API_KEY);
-    distance.units('metric');
-    distance.mode('transit');
-    const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
-    distance.departure_time(monday7AMinUTC);
-
-    return await new Promise(resolve => {
-        distance.matrix(addresses, ['1 Smail St, Ultimo NSW 2007', '11/155 Clarence St, Sydney NSW 2000'], (err, data) => resolve(data));
-    });
-}
-
 test('CSV these props', async t => {
+    const alreadyRated = getAlreadyRated();
+    console.log(`Found ${alreadyRated.length} already rated properties`);
+
     let isOnLastPage;
     let records = [];
 
@@ -117,17 +98,19 @@ test('CSV these props', async t => {
 
     const recordsWithTimes = filteredRecords.map((record, index) => {
         const distance = distances[index];
-        const bondiDistance = Math.round(distance.elements[0].duration.value / 60.0);
-        const manlyDistance = Math.round(distance.elements[1].duration.value / 60.0);
-        const unityDistance = Math.round(distance.elements[2].duration.value / 60.0);
-        const wwfDistance = Math.round(distance.elements[3].duration.value / 60.0);
-        const pivotalDistance = Math.round(distance.elements[4].duration.value / 60.0);
+        const coogeeDistance = Math.round(distance.elements[0].duration.value / 60.0);
+        const bronteDistance = Math.round(distance.elements[1].duration.value / 60.0);
+        const bondiDistance = Math.round(distance.elements[2].duration.value / 60.0);
+        const manlyDistance = Math.round(distance.elements[3].duration.value / 60.0);
+        const unityDistance = Math.round(distance.elements[4].duration.value / 60.0);
+        const wwfDistance = Math.round(distance.elements[5].duration.value / 60.0);
+        const pivotalDistance = Math.round(distance.elements[6].duration.value / 60.0);
 
-        return [...record, bondiDistance, manlyDistance, unityDistance, wwfDistance, pivotalDistance]
+        return [...record, coogeeDistance, bronteDistance, bondiDistance, manlyDistance, unityDistance, wwfDistance, pivotalDistance]
     });
 
     const csvWriter = createArrayCsvWriter({
-        header: ['Address', 'Link', 'Rent', 'Suburb', 'Bedrooms', 'Car space', 'Time to Bondi', 'Time To Manly', 'Time to Unity', 'Time to WWF by Transit', 'Time to Pivotal by Transit'],
+        header: ['Address', 'Link', 'Rent', 'Suburb', 'Bedrooms', 'Car space', 'Time to Coogee', 'Time to Bronte', 'Time to Bondi', 'Time To Manly', 'Time to Unity', 'Time to WWF by Transit', 'Time to Pivotal by Transit'],
         path: './rent.csv'
     });
 
