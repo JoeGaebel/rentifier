@@ -2,10 +2,10 @@ import {ClientFunction, Selector} from 'testcafe'
 import {createArrayCsvWriter} from 'csv-writer';
 import distance from 'google-distance-matrix';
 import moment from 'moment';
-
+import alreadyRated from "./alreadyRated";
 
 fixture`The Search`
-    .page`https://www.domain.com.au/rent/?suburb=manly-nsw-2095,bondi-nsw-2026,queenscliff-nsw-2096,manly-vale-nsw-2093,clovelly-nsw-2031,bronte-nsw-2024&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
+    .page`https://www.domain.com.au/rent/?suburb=manly-nsw-2095,bondi-nsw-2026,queenscliff-nsw-2096,manly-vale-nsw-2093,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
 
 const checkIfOnLastPage = ClientFunction(() => {
     return document.querySelectorAll('[data-testid=paginator-navigation-button]')[1].disabled
@@ -109,9 +109,13 @@ test('CSV these props', async t => {
         console.log('Collected data, records are', records.length)
     }
 
-    const distances = await getDistances(records);
+    const filteredRecords = records.filter(record => {
+        return !alreadyRated.includes(record[0])
+    });
 
-    const recordsWithTimes = records.map((record, index) => {
+    const distances = await getDistances(filteredRecords);
+
+    const recordsWithTimes = filteredRecords.map((record, index) => {
         const distance = distances[index];
         const bondiDistance = Math.round(distance.elements[0].duration.value / 60.0);
         const manlyDistance = Math.round(distance.elements[1].duration.value / 60.0);
