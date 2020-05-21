@@ -8,7 +8,7 @@ exports.getTravelDistances = async function (propertyAddresses, pointOfInterestA
     }
     distance.key(process.env.API_KEY);
     distance.units('metric');
-    distance.mode('transit');
+    distance.mode(mode);
     const monday7AMinUTC = moment.utc().add(1, 'weeks').startOf('isoWeek').subtract(3, 'hours') / 1000;
     distance.departure_time(monday7AMinUTC);
 
