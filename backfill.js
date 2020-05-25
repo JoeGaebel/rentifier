@@ -5,20 +5,25 @@ async function getDistances(addresses) {
     const addressChunks = chunkArray(addresses, 15);
 
     const pointOfInterestAddresses = [
-        'Coogee Beach',
-        'Bronte Beach',
+        'Tamarama Beach',
     ];
 
-    let carDistances = [];
+    let driveDistances = [];
+    let walkDistances = [];
 
     for (const chunk of addressChunks) {
-        carDistances = [
-            ...carDistances,
-            ...(await getTravelDistances(chunk, pointOfInterestAddresses, 'driving')).rows
-        ];
-        console.log("Getting data from Google, rows processed: ", carDistances.length);
+        driveDistances = [...driveDistances, ...(await getTravelDistances(chunk, pointOfInterestAddresses, 'driving')).rows];
+        walkDistances = [...walkDistances, ...(await getTravelDistances(chunk, pointOfInterestAddresses, 'walking')).rows];
+        console.log("Getting data from Google, rows processed: ", driveDistances.length);
     }
-    return carDistances;
+    return driveDistances.map((record, index) => {
+        return {
+            elements: [
+                ...record.elements,
+                ...walkDistances[index].elements
+            ]
+        }
+    })
 }
 
 (async () => {
@@ -27,14 +32,14 @@ async function getDistances(addresses) {
 
     const recordsWithTimes = addresses.map((address, index) => {
         const distance = distances[index];
-        const coogeeDistance = Math.round(distance.elements[0].duration.value / 60.0);
-        const bronteDistance = Math.round(distance.elements[1].duration.value / 60.0);
+        const tamDrive = Math.round(distance.elements[0].duration.value / 60.0);
+        const tamWalk = Math.round(distance.elements[1].duration.value / 60.0);
 
-        return [address, coogeeDistance, bronteDistance]
+        return [address, tamWalk, tamDrive]
     });
 
     const csvWriter = createArrayCsvWriter({
-        header: ['Address', 'Time to Coogee', 'Time to Bronte'],
+        header: ['Address', 'Tam walk', 'Tam drive'],
         path: './backfill.csv'
     });
 
