@@ -37,10 +37,11 @@ const getData = ClientFunction(() => {
 
 async function getDistances(records) {
     const addresses = records.map(record => record[0]);
-    const addressChunks = chunkArray(addresses, 15);
+    const addressChunks = chunkArray(addresses, 10);
 
     const drivingPointsOfInterest = [
         'Bronte Beach',
+        'Tamarama Beach',
         'Bondi Beach',
         'Manly Beach',
         '20 Berry St, North Sydney NSW 2060',
@@ -54,6 +55,7 @@ async function getDistances(records) {
 
     const walkingPointsOfInterest = [
         'Bronte Beach',
+        'Tamarama Beach',
         'Bondi Beach',
         'Manly Beach',
     ];
@@ -117,21 +119,37 @@ test('CSV these props', async t => {
 
         // Driving distances
         const drivingToBronte = Math.round(distance.elements[0].duration.value / 60.0);
-        const drivingToBondi = Math.round(distance.elements[1].duration.value / 60.0);
-        const drivingToManly = Math.round(distance.elements[2].duration.value / 60.0);
-        const drivingToUnity = Math.round(distance.elements[3].duration.value / 60.0);
-        const drivingToPivotal = Math.round(distance.elements[4].duration.value / 60.0);
+        const drivingToTam = Math.round(distance.elements[1].duration.value / 60.0);
+        const drivingToBondi = Math.round(distance.elements[2].duration.value / 60.0);
+        const drivingToManly = Math.round(distance.elements[3].duration.value / 60.0);
+        const drivingToUnity = Math.round(distance.elements[4].duration.value / 60.0);
+        const drivingToPivotal = Math.round(distance.elements[5].duration.value / 60.0);
 
         // Transit Distances
-        const transitToUnity = Math.round(distance.elements[5].duration.value / 60.0);
-        const transitToPivotal = Math.round(distance.elements[6].duration.value / 60.0);
+        const transitToUnity = Math.round(distance.elements[6].duration.value / 60.0);
+        const transitToPivotal = Math.round(distance.elements[7].duration.value / 60.0);
 
         // Walking distances
-        const walkingToBronte = Math.round(distance.elements[7].duration.value / 60.0);
-        const walkingToBondi = Math.round(distance.elements[8].duration.value / 60.0);
-        const walkingToManly = Math.round(distance.elements[9].duration.value / 60.0);
+        const walkingToBronte = Math.round(distance.elements[8].duration.value / 60.0);
+        const walkingToTam = Math.round(distance.elements[9].duration.value / 60.0);
+        const walkingToBondi = Math.round(distance.elements[10].duration.value / 60.0);
+        const walkingToManly = Math.round(distance.elements[11].duration.value / 60.0);
 
-        return [...record, walkingToBronte, drivingToBronte, walkingToBondi, drivingToBondi, walkingToManly, drivingToManly, transitToUnity, drivingToUnity, transitToPivotal, drivingToPivotal]
+        return [
+            ...record,
+            walkingToBronte,
+            drivingToBronte,
+            walkingToTam,
+            drivingToTam,
+            walkingToBondi,
+            drivingToBondi,
+            walkingToManly,
+            drivingToManly,
+            transitToUnity,
+            drivingToUnity,
+            transitToPivotal,
+            drivingToPivotal
+        ]
     });
 
     const csvWriter = createArrayCsvWriter({
@@ -144,6 +162,8 @@ test('CSV these props', async t => {
             'Car space',
             'Bronte Walk',
             'Bronte Drive',
+            'Tam Walk',
+            'Tam Drive',
             'Bondi Walk',
             'Bondi Drive',
             'Manly Walk',
