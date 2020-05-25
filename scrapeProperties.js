@@ -3,7 +3,7 @@ import {createArrayCsvWriter} from 'csv-writer';
 import {chunkArray, getAlreadyRated, getTravelDistances} from "./helpers";
 
 fixture`The Search`
-    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,queenscliff-nsw-2096,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033,fairlight-nsw-2094,balgowlah-nsw-2093,balgowlah-heights-nsw-2093,bellevue-hill-nsw-2023,woollahra-nsw-2025,randwick-nsw-2031,tamarama-nsw-2026&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=0-2&bathrooms=1-any&price=0-475&excludedeposittaken=1`;
+    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,queenscliff-nsw-2096,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033,fairlight-nsw-2094,balgowlah-nsw-2093,balgowlah-heights-nsw-2093,bellevue-hill-nsw-2023,woollahra-nsw-2025,randwick-nsw-2031,tamarama-nsw-2026&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=0-2&bathrooms=1-any&price=0-525&excludedeposittaken=1`;
 
 const checkIfOnLastPage = ClientFunction(() => {
     return document.querySelectorAll('[data-testid=paginator-navigation-button]')[1].disabled
