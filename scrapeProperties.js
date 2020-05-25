@@ -3,7 +3,7 @@ import {createArrayCsvWriter} from 'csv-writer';
 import {chunkArray, getAlreadyRated, getTravelDistances} from "./helpers";
 
 fixture`The Search`
-    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033,north-bondi-nsw-2026,waverley-nsw-2024,bondi-junction-nsw-2022,tamarama-nsw-2026,randwick-nsw-2031&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=2-any&bathrooms=1-any&price=0-600&excludedeposittaken=1`;
+    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,queenscliff-nsw-2096,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033,fairlight-nsw-2094,balgowlah-nsw-2093,balgowlah-heights-nsw-2093,bellevue-hill-nsw-2023,woollahra-nsw-2025,randwick-nsw-2031,tamarama-nsw-2026&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=0-2&bathrooms=1-any&price=0-475&excludedeposittaken=1`;
 
 const checkIfOnLastPage = ClientFunction(() => {
     return document.querySelectorAll('[data-testid=paginator-navigation-button]')[1].disabled
@@ -39,33 +39,42 @@ async function getDistances(records) {
     const addresses = records.map(record => record[0]);
     const addressChunks = chunkArray(addresses, 15);
 
-    const carPointOfInterestAddresses = [
-        'Coogee Beach',
+    const drivingPointsOfInterest = [
         'Bronte Beach',
         'Bondi Beach',
         'Manly Beach',
-        '20 Berry St, North Sydney NSW 2060'
-    ];
-
-    const busPointOfInterestAddresses = [
-        '1 Smail St, Ultimo NSW 2007',
+        '20 Berry St, North Sydney NSW 2060',
         '11/155 Clarence St, Sydney NSW 2000'
     ];
 
-    let carDistances = [];
-    let busDistances = [];
+    const transitPointsOfInterest = [
+        '20 Berry St, North Sydney NSW 2060',
+        '11/155 Clarence St, Sydney NSW 2000'
+    ];
+
+    const walkingPointsOfInterest = [
+        'Bronte Beach',
+        'Bondi Beach',
+        'Manly Beach',
+    ];
+
+    let drivingDistances = [];
+    let transitDistances = [];
+    let walkingDistances = [];
 
     for (const chunk of addressChunks) {
-        carDistances = [...carDistances, ...(await getTravelDistances(chunk, carPointOfInterestAddresses, 'driving')).rows];
-        busDistances = [...busDistances, ...(await getTravelDistances(chunk, busPointOfInterestAddresses, 'transit')).rows];
-        console.log("Getting data from Google, rows processed: ", carDistances.length);
+        drivingDistances = [...drivingDistances, ...(await getTravelDistances(chunk, drivingPointsOfInterest, 'driving')).rows];
+        transitDistances = [...transitDistances, ...(await getTravelDistances(chunk, transitPointsOfInterest, 'transit')).rows];
+        walkingDistances = [...walkingDistances, ...(await getTravelDistances(chunk, walkingPointsOfInterest, 'walking')).rows];
+        console.log("Getting data from Google, rows processed: ", drivingDistances.length);
     }
 
-    return carDistances.map((record, index) => {
+    return drivingDistances.map((record, index) => {
         return {
             elements: [
                 ...record.elements,
-                ...busDistances[index].elements
+                ...transitDistances[index].elements,
+                ...walkingDistances[index].elements
             ]
         }
     })
@@ -96,21 +105,54 @@ test('CSV these props', async t => {
 
     const distances = await getDistances(filteredRecords);
 
+    if (distances.length !== filteredRecords.length) {
+        console.log(JSON.stringify(filteredRecords));
+        console.log("=--------------------------------------------");
+        console.log(JSON.stringify(distances));
+        throw Error("Distances and Filtered records out of sync")
+    }
+
     const recordsWithTimes = filteredRecords.map((record, index) => {
         const distance = distances[index];
-        const coogeeDistance = Math.round(distance.elements[0].duration.value / 60.0);
-        const bronteDistance = Math.round(distance.elements[1].duration.value / 60.0);
-        const bondiDistance = Math.round(distance.elements[2].duration.value / 60.0);
-        const manlyDistance = Math.round(distance.elements[3].duration.value / 60.0);
-        const unityDistance = Math.round(distance.elements[4].duration.value / 60.0);
-        const wwfDistance = Math.round(distance.elements[5].duration.value / 60.0);
-        const pivotalDistance = Math.round(distance.elements[6].duration.value / 60.0);
 
-        return [...record, coogeeDistance, bronteDistance, bondiDistance, manlyDistance, unityDistance, wwfDistance, pivotalDistance]
+        // Driving distances
+        const drivingToBronte = Math.round(distance.elements[0].duration.value / 60.0);
+        const drivingToBondi = Math.round(distance.elements[1].duration.value / 60.0);
+        const drivingToManly = Math.round(distance.elements[2].duration.value / 60.0);
+        const drivingToUnity = Math.round(distance.elements[3].duration.value / 60.0);
+        const drivingToPivotal = Math.round(distance.elements[4].duration.value / 60.0);
+
+        // Transit Distances
+        const transitToUnity = Math.round(distance.elements[5].duration.value / 60.0);
+        const transitToPivotal = Math.round(distance.elements[6].duration.value / 60.0);
+
+        // Walking distances
+        const walkingToBronte = Math.round(distance.elements[7].duration.value / 60.0);
+        const walkingToBondi = Math.round(distance.elements[8].duration.value / 60.0);
+        const walkingToManly = Math.round(distance.elements[9].duration.value / 60.0);
+
+        return [...record, walkingToBronte, drivingToBronte, walkingToBondi, drivingToBondi, walkingToManly, drivingToManly, transitToUnity, drivingToUnity, transitToPivotal, drivingToPivotal]
     });
 
     const csvWriter = createArrayCsvWriter({
-        header: ['Address', 'Link', 'Rent', 'Suburb', 'Bedrooms', 'Car space', 'Time to Coogee', 'Time to Bronte', 'Time to Bondi', 'Time To Manly', 'Time to Unity', 'Time to WWF by Transit', 'Time to Pivotal by Transit'],
+        header: [
+            'Address',
+            'Link',
+            'Rent',
+            'Suburb',
+            'Bedrooms',
+            'Car space',
+            'Bronte Walk',
+            'Bronte Drive',
+            'Bondi Walk',
+            'Bondi Drive',
+            'Manly Walk',
+            'Manly Drive',
+            'Unity Transit',
+            'Unity Drive',
+            'Pivotal Transit',
+            'Pivotal Drive'
+        ],
         path: './rent.csv'
     });
 
