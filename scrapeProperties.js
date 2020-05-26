@@ -3,7 +3,7 @@ import {createArrayCsvWriter} from 'csv-writer';
 import {chunkArray, getAlreadyRated, getTravelDistances} from "./helpers";
 
 fixture`The Search`
-    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,queenscliff-nsw-2096,clovelly-nsw-2031,bronte-nsw-2024,kensington-nsw-2033,fairlight-nsw-2094,balgowlah-nsw-2093,balgowlah-heights-nsw-2093,bellevue-hill-nsw-2023,woollahra-nsw-2025,randwick-nsw-2031,tamarama-nsw-2026&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=0-2&bathrooms=1-any&price=0-525&excludedeposittaken=1`;
+    .page`https://www.domain.com.au/rent/?suburb=bondi-nsw-2026,clovelly-nsw-2031,bronte-nsw-2024,bellevue-hill-nsw-2023,woollahra-nsw-2025,randwick-nsw-2031,tamarama-nsw-2026,queens-park-nsw-2022,north-bondi-nsw-2026,waverley-nsw-2024&ptype=apartment-unit-flat,block-of-units,duplex,free-standing,new-apartments,new-home-designs,new-house-land,pent-house,semi-detached,studio,terrace,villa&bedrooms=1-3&bathrooms=1-any&price=0-550&excludedeposittaken=1`;
 
 const checkIfOnLastPage = ClientFunction(() => {
     return document.querySelectorAll('[data-testid=paginator-navigation-button]')[1].disabled
@@ -82,6 +82,13 @@ async function getDistances(records) {
     })
 }
 
+function getDistanceFromElement(element) {
+    if (element.duration) {
+        return Math.round(element.duration.value / 60)
+    }
+    else return "???"
+}
+
 test('CSV these props', async t => {
     const alreadyRated = getAlreadyRated();
     console.log(`Found ${alreadyRated.length} already rated properties`);
@@ -118,22 +125,22 @@ test('CSV these props', async t => {
         const distance = distances[index];
 
         // Driving distances
-        const drivingToBronte = Math.round(distance.elements[0].duration.value / 60.0);
-        const drivingToTam = Math.round(distance.elements[1].duration.value / 60.0);
-        const drivingToBondi = Math.round(distance.elements[2].duration.value / 60.0);
-        const drivingToManly = Math.round(distance.elements[3].duration.value / 60.0);
-        const drivingToUnity = Math.round(distance.elements[4].duration.value / 60.0);
-        const drivingToPivotal = Math.round(distance.elements[5].duration.value / 60.0);
+        const drivingToBronte = getDistanceFromElement(distance.elements[0]);
+        const drivingToTam = getDistanceFromElement(distance.elements[1]);
+        const drivingToBondi = getDistanceFromElement(distance.elements[2]);
+        const drivingToManly = getDistanceFromElement(distance.elements[3]);
+        const drivingToUnity = getDistanceFromElement(distance.elements[4]);
+        const drivingToPivotal = getDistanceFromElement(distance.elements[5]);
 
         // Transit Distances
-        const transitToUnity = Math.round(distance.elements[6].duration.value / 60.0);
-        const transitToPivotal = Math.round(distance.elements[7].duration.value / 60.0);
+        const transitToUnity = getDistanceFromElement(distance.elements[6]);
+        const transitToPivotal = getDistanceFromElement(distance.elements[7]);
 
         // Walking distances
-        const walkingToBronte = Math.round(distance.elements[8].duration.value / 60.0);
-        const walkingToTam = Math.round(distance.elements[9].duration.value / 60.0);
-        const walkingToBondi = Math.round(distance.elements[10].duration.value / 60.0);
-        const walkingToManly = Math.round(distance.elements[11].duration.value / 60.0);
+        const walkingToBronte = getDistanceFromElement(distance.elements[8]);
+        const walkingToTam = getDistanceFromElement(distance.elements[9]);
+        const walkingToBondi = getDistanceFromElement(distance.elements[10]);
+        const walkingToManly = getDistanceFromElement(distance.elements[11]);
 
         return [
             ...record,

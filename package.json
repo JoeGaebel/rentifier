@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "scrape": "testcafe chrome:headless scrapeProperties.js",
+    "scrape": "testcafe chrome:headless scrapeProperties.js --skip-js-errors",
     "backfill": "node backfill.js"
   },
   "keywords": [],
